@@ -16,13 +16,13 @@
 						contentType:'application/x-www-form-urlencoded',
 						debounceDuration:0,
 						handleAs:'json',
+						autoTransform:true,
 						headers:'',
 						method:'GET',
 						params:{},
 						async:true,
 						verbose:false,
 						withCredentials:false,
-						autoTransform:true,
 						onResponse:'onAjaxResponse',
 						onError:'onAjaxError',
 						onSend:'onAjaxSend',
@@ -39,7 +39,7 @@
 				},
 				__output = function(request,text){
 					if(request.properties.log)
-						console.log(text,request);
+						console.info(text,request);
 
 					if(request.properties.fire)
 						__element.fire(text,request);
@@ -55,12 +55,20 @@
 					return function(){};
 				},
 				__createCallbackObject = function(status,statusText,properties,response){
-					return {
-						status:status,
-						statusText:statusText,
-						properties:properties,
-						response:response
+					if(response && properties.autoTransform){
+						console.log('autoTransform')
 					}
+					return {
+						properties:properties,
+						details:{
+							status:status,
+							statusText:statusText,
+							response:response
+						}
+					};
+				},
+				__autoTransform = function(type,response){
+
 				};
 
 
@@ -72,7 +80,7 @@
 				this.activeRequests[_request.requestId] = _request;
 
 				__output(_request,'ajax-send');
-				__getCallbackFunction(_properties['onSend']);
+				__getCallbackFunction(_properties.onSend);
 
 				return _request.__send();
 			};
@@ -115,7 +123,7 @@
 
 
 			__ajax.prototype.__getProperties = function(properties){
-				var _obj = new Object();
+				var _obj = {};
 				for(var index in this.__properties){ 
 					if(this.hasOwnProperty(index))
 						_obj[index] = this[index];
@@ -145,16 +153,16 @@
 					};
 					_scope.xhr.onabort = function(){
 						return reject(__createCallbackObject(_scope.xhr.status,'Request Aborted',_scope.properties,null));
-					}
+					};
 					_scope.xhr.send(_scope.properties.body);
 				});
 
 
 				this.promise.then(function(e){
-					var _cb = __getCallbackFunction(_scope.properties['onResponse']);
+					var _cb = __getCallbackFunction(_scope.properties.onResponse);
 					return _cb(e);
 				}).catch(function(e){
-					var _cb = __getCallbackFunction(_scope.properties['onError']);
+					var _cb = __getCallbackFunction(_scope.properties.onError);
 					return _cb(e);
 				});
 
