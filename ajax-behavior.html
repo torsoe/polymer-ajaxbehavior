@@ -1,0 +1,174 @@
+<script>
+	var AjaxBehavior = AjaxBehavior || {};
+	AjaxBehavior = {
+		ready:function(){
+			var __element = this,
+				__count = 0,
+				__ajax = function(properties){
+					this.activeRequests = {};
+					this.lastError = null;
+					this.lastRequest = null;
+					this.lastResponse = null;
+					this.__properties = {
+						url:'',
+						auto:false,
+						body:'',
+						contentType:'application/x-www-form-urlencoded',
+						debounceDuration:0,
+						handleAs:'json',
+						headers:'',
+						method:'GET',
+						params:{},
+						async:true,
+						verbose:false,
+						withCredentials:false,
+						autoTransform:true,
+						onReadyStateChange:'onAjaxReadyStateChange',
+						onResponse:'onAjaxResponse',
+						onError:'onAjaxError',
+						onSend:'onAjaxSend',
+						onAbort:'onAjaxAbort',
+						log:false,
+						fire:false
+					};
+					return this.__setProperties(properties);
+				},
+				__request = function(properties){
+					this.requestId = __count++;
+					this.properties = properties;
+					this.xhr = new XMLHttpRequest();
+
+					return this;
+				},
+				__output = function(request,text){
+					if(request.properties.log)
+						console.log(text,request);
+
+					if(request.properties.fire)
+						__element.fire(text,request);
+				},
+				__runFunction = function(){
+
+				};
+
+
+			__ajax.prototype.send = function(properties){
+				var _properties = this.__setProperties(properties).__getProperties(),
+					_request = new __request(_properties);
+
+				this.lastRequest = _request;
+				this.activeRequests[_request.requestId] = _request;
+
+				__output(_request,'ajax-send');
+
+				return _request.__send();
+			};
+
+
+			__ajax.prototype.abort = function(request){
+				var _request;
+
+				if(typeof request === 'undefined'){
+					_request = this.lastRequest;
+				}else{
+					if(typeof request === 'number' && this.activeRequests[request]){
+						_request = this.activeRequests[request];
+					}else if(typeof request === 'object' && request instanceof __request){
+						_request = request;
+					}else{
+						return;
+					}
+				}
+				
+				_request.xhr.abort();
+				delete this.activeRequests[_request.requestId];
+
+				__output(_request,'ajax-abort');
+
+				return this;
+			};
+
+
+			__ajax.prototype.__setProperties = function(properties){
+				var __properties = properties || {};
+				for(var index in this.__properties){ 
+					if(this.hasOwnProperty(index))
+						this[index] = __properties[index] || this[index];
+					else
+						this[index] = __properties[index] || this.__properties[index];
+				}
+				return this;
+			};
+
+
+			__ajax.prototype.__getProperties = function(properties){
+				var _obj = new Object();
+				for(var index in this.__properties){ 
+					if(this.hasOwnProperty(index))
+						_obj[index] = this[index];
+				}
+				return _obj;
+			};
+
+
+			__request.prototype.__send = function(){
+				var _scope = this;
+				
+				this.promise = new Promise(function(resolve, reject){
+
+					if(_scope.xhr.readyState > 0){
+						return;
+					}
+					
+					_scope.xhr.open(
+						_scope.properties.method,
+						_scope.properties.url,
+						_scope.properties.async
+					);
+
+
+					_scope.xhr.onload = function(){
+						if(this.status >= 200 && this.status < 300){
+							console.log(_scope,resolve())
+							//console.log(xhr.response);
+						}else{
+							return reject({
+								status: _scope.xhr.status,
+								statusText: _scope.xhr.statusText
+							});
+						}
+					};
+					_scope.xhr.onabort = function(){
+						return reject({
+							status: _scope.xhr.status,
+							statusText: 'Request Aborted'
+						});
+					}
+
+					_scope.xhr.onreadystatechange = function(){
+						//console.log('test')
+					}
+
+					_scope.xhr.send(_scope.properties.body);
+				});
+
+
+				this.promise.then(function(){
+					console.log('fertig')
+				}).catch(function(e){
+					console.log('error',e)
+				});
+
+
+				return this;
+			};
+
+
+			this.ajax = new __ajax(this.ajax || {});
+
+			if(this.ajax.auto === true){
+				this.ajax.send();
+			}
+		}
+	};
+</script>

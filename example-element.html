@@ -1,0 +1,52 @@
+<link rel="import" href="polymer/polymer/polymer.html">
+<link rel="import" href="ajax-behavior.html">
+<dom-module id="ajax-behavior-element">
+	<template>
+		<a href="www.hitmilk.com/kleinefeiglinge.m4a">bla</a>
+	</template>
+
+	<script>
+		Polymer({
+			is: 'ajax-behavior-element',
+			behaviors: [AjaxBehavior],
+			properties:{
+				ajax:{
+					type:Object,
+					value:{
+						url:'http://www.rockingboxes.com/example.json',
+						onResponse:'test1',
+						method:'post',
+						log:false,
+						auto:true
+					}
+				}
+			},
+			ready:function(){
+
+				var a = this.ajax.send({
+					url : 'example.jsodn',
+					onResponse:'test2'
+				});
+
+
+				 this.ajax.abort(0)
+
+				this.ajax.url = 'http://www.rockingboxes.com/test.json';
+				this.ajax.onResponse = 'nefunktion'
+				this.ajax.send();
+
+				
+				
+			},
+			test1:function(bla){
+				console.log('1',bla)
+			},
+			test2:function(){
+				console.log('2')
+			},
+			nefunktion:function(){
+				console.log('3')
+			}
+		});
+	</script>
+</dom-module>
