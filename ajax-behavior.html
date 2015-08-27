@@ -23,11 +23,9 @@
 						verbose:false,
 						withCredentials:false,
 						autoTransform:true,
-						onReadyStateChange:'onAjaxReadyStateChange',
 						onResponse:'onAjaxResponse',
 						onError:'onAjaxError',
 						onSend:'onAjaxSend',
-						onAbort:'onAjaxAbort',
 						log:false,
 						fire:false
 					};
@@ -37,7 +35,6 @@
 					this.requestId = __count++;
 					this.properties = properties;
 					this.xhr = new XMLHttpRequest();
-
 					return this;
 				},
 				__output = function(request,text){
@@ -47,8 +44,23 @@
 					if(request.properties.fire)
 						__element.fire(text,request);
 				},
-				__runFunction = function(){
+				__getCallbackFunction = function(property){
+					if(typeof property === 'string'){
+						if(typeof __element[property] === 'function')
+							return __element[property];
+					}else if(typeof property === 'function'){
+						return property;
+					}
 
+					return function(){};
+				},
+				__createCallbackObject = function(status,statusText,properties,response){
+					return {
+						status:status,
+						statusText:statusText,
+						properties:properties,
+						response:response
+					}
 				};
 
 
@@ -60,6 +72,7 @@
 				this.activeRequests[_request.requestId] = _request;
 
 				__output(_request,'ajax-send');
+				__getCallbackFunction(_properties['onSend']);
 
 				return _request.__send();
 			};
@@ -115,48 +128,34 @@
 				var _scope = this;
 				
 				this.promise = new Promise(function(resolve, reject){
-
 					if(_scope.xhr.readyState > 0){
 						return;
 					}
-					
 					_scope.xhr.open(
 						_scope.properties.method,
 						_scope.properties.url,
 						_scope.properties.async
 					);
-
-
 					_scope.xhr.onload = function(){
 						if(this.status >= 200 && this.status < 300){
-							console.log(_scope,resolve())
-							//console.log(xhr.response);
+							return resolve(__createCallbackObject(_scope.xhr.status,_scope.xhr.statusText,_scope.properties,_scope.xhr.response));
 						}else{
-							return reject({
-								status: _scope.xhr.status,
-								statusText: _scope.xhr.statusText
-							});
+							return reject(__createCallbackObject(_scope.xhr.status,_scope.xhr.statusText,_scope.properties,null));
 						}
 					};
 					_scope.xhr.onabort = function(){
-						return reject({
-							status: _scope.xhr.status,
-							statusText: 'Request Aborted'
-						});
+						return reject(__createCallbackObject(_scope.xhr.status,'Request Aborted',_scope.properties,null));
 					}
-
-					_scope.xhr.onreadystatechange = function(){
-						//console.log('test')
-					}
-
 					_scope.xhr.send(_scope.properties.body);
 				});
 
 
-				this.promise.then(function(){
-					console.log('fertig')
+				this.promise.then(function(e){
+					var _cb = __getCallbackFunction(_scope.properties['onResponse']);
+					return _cb(e);
 				}).catch(function(e){
-					console.log('error',e)
+					var _cb = __getCallbackFunction(_scope.properties['onError']);
+					return _cb(e);
 				});
 
 

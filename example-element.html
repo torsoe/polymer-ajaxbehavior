@@ -24,12 +24,12 @@
 			ready:function(){
 
 				var a = this.ajax.send({
-					url : 'example.jsodn',
-					onResponse:'test2'
+					url : 'example.json',
+					onError:'test2'
 				});
 
 
-				 this.ajax.abort(0)
+				//this.ajax.abort(0)
 
 				this.ajax.url = 'http://www.rockingboxes.com/test.json';
 				this.ajax.onResponse = 'nefunktion'
@@ -41,11 +41,11 @@
 			test1:function(bla){
 				console.log('1',bla)
 			},
-			test2:function(){
-				console.log('2')
+			test2:function(e){
+				console.log('2',e)
 			},
-			nefunktion:function(){
-				console.log('3')
+			nefunktion:function(bla){
+				console.log('3',bla)
 			}
 		});
 	</script>
